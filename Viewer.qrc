@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>js/d3.min.js</file>
+        <file>js/dagre-d3.min.js</file>
+        <file>js/jquery-2.1.1.min.js</file>
+        <file>js/graphlib-dot.min.js</file>
+        <file>Viewer.html</file>
+    </qresource>
+</RCC>
