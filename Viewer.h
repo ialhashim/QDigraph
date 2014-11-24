@@ -21,6 +21,13 @@ private:
 public slots:
     void insertLogItem(QString msg);
 
+    void addNode(QString node_info);
+    void addEdge(QString edge_info);
+	void updateGraph();
+	void addCSS(QString style_code);
+
+    void doTestGraph();
+
 signals:
     void addLogItem(QString msg);
 };
