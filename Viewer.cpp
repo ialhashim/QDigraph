@@ -1,17 +1,21 @@
 #include "Viewer.h"
 #include "ui_Viewer.h"
-#include <QWebFrame>
 
 Viewer::Viewer(QWidget *parent) : QWidget(parent), ui(new Ui::Viewer)
 {
     Q_INIT_RESOURCE(Viewer);
     ui->setupUi(this);
 
+    wv = new QWebView();
+    ui->mainlayout->addWidget(wv);
+
+    wv->load(QUrl("qrc:/Viewer.html"));
+
 	// Logging:
 	connect(this, SIGNAL(addLogItem(QString)), SLOT(insertLogItem(QString)));
 
     // Add pointer to me
-    ui->webView->page()->mainFrame()->addToJavaScriptWindowObject("Viewer", this);
+    wv->page()->mainFrame()->addToJavaScriptWindowObject("Viewer", this);
 
 	// Demo:
 	connect(ui->testGraph, SIGNAL(clicked()), SLOT(doTestGraph()));
@@ -54,7 +58,7 @@ void Viewer::doTestGraph()
 
     // Test interaction with javascript
     connect(ui->doJavaScript, &QPushButton::released, [&]{
-		ui->webView->page()->mainFrame()->evaluateJavaScript("g.setEdge(1,3);");
+        wv->page()->mainFrame()->evaluateJavaScript("g.setEdge(1,3);");
 		updateGraph();
     });
 
@@ -71,13 +75,13 @@ void Viewer::insertLogItem(QString msg)
     ui->logWidget->insertItem(ui->logWidget->count(), msg);
 }
 
-void Viewer::addNode(QString node_info)
+int Viewer::addNode(QString node_info)
 {
     QStringList params = node_info.split(",");
-    if(params.size() < 2) return;
+    if(params.size() < 2) params << "";
 
 	auto cmd = QString("addNodeToGraph(g, '%1', '%2')").arg(params[0]).arg(params[1]);
-    ui->webView->page()->mainFrame()->evaluateJavaScript(cmd);
+    return wv->page()->mainFrame()->evaluateJavaScript(cmd).toInt();
 }
 
 void Viewer::addEdge(QString edge_info)
@@ -85,18 +89,23 @@ void Viewer::addEdge(QString edge_info)
     QStringList params = edge_info.split(",");
     if(params.size() < 2) return;
 
-	auto cmd = QString("addEdgeToGraph(g, %1, %2)").arg(params[0]).arg(params[1]);
-    ui->webView->page()->mainFrame()->evaluateJavaScript(cmd);
+    addEdge(params[0].toInt(), params[1].toInt());
+}
+
+void Viewer::addEdge(int nid1, int nid2)
+{
+    auto cmd = QString("addEdgeToGraph(g, %1, %2)").arg(nid1).arg(nid2);
+    wv->page()->mainFrame()->evaluateJavaScript(cmd);
 }
 
 void Viewer::addCSS(QString style_code)
 {
 	auto cmd = QString("$('<style type=\"text/css\"> %1 </style>').appendTo('head')").arg(style_code);
-	ui->webView->page()->mainFrame()->evaluateJavaScript(cmd);
+    wv->page()->mainFrame()->evaluateJavaScript(cmd);
 }
 
 void Viewer::updateGraph()
 {
-	ui->webView->page()->mainFrame()->evaluateJavaScript("render(inner, g);");
-	ui->webView->page()->mainFrame()->evaluateJavaScript("postProcessGraph(g);");
+    wv->page()->mainFrame()->evaluateJavaScript("render(inner, g);");
+    wv->page()->mainFrame()->evaluateJavaScript("postProcessGraph(g);");
 }
